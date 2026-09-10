@@ -30,9 +30,9 @@ class RoverladRun(Node):
         self.cmdVel = self.create_publisher(Twist, '/cmd_vel', 10)
 
         self.fullLinearSpeed = 0.15
-        self.slowLinearSpeed = 0.04
+        self.slowLinearSpeed = 0.005
         self.linearVel = self.fullLinearSpeed #self.fullLinearSpeed
-        self.angularVel = 0.5
+        self.angularVel = 10.0
 
         self.laneHandler = LaneHandler()
 
@@ -41,7 +41,7 @@ class RoverladRun(Node):
         self.tflightState = 'None'
         self.tflightInRange = False
 
-        self.maxAngular = 1.5
+        self.maxAngular = 5
 
         self.pidDriver = RoverladPIDDrive(self.linearVel, self.angularVel)
         

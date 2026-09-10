@@ -183,8 +183,6 @@ class LaneHandler:
         laneMask = cv2.erode(laneMask, kernel)
         laneMask = cv2.dilate(laneMask, kernel)
         return laneMask
-
-   
             
     # Detects and returns large areas of noise (like shadows, buildings)
     def contourFilter(self, inMask):
@@ -257,7 +255,7 @@ class LaneHandler:
         cv2.line(vis, (x1, y1), (x2, y2), color, 2)
 
     # From a blob, draw a line to fit it.
-    def getLineSegmentFromCluster(self, cluster):
+    def getLineSegmentFromCluster(self, cluster, maxLineLength=300):
         if len(cluster) < 2:
             return None
     
@@ -266,21 +264,32 @@ class LaneHandler:
     
         v = np.array([vx, vy])
     
-        projections = []
-        for (x, y) in pts:
-            p = np.array([x - x0, y - y0])
-            t = np.dot(p, v)   # scalar projection
-            projections.append(t)
+        projections = [
+            np.dot(np.array([x - x0, y - y0]), v)
+            for x, y in pts
+        ]
     
         projections = np.array(projections)
     
         tMin = projections.min()
         tMax = projections.max()
-    
-        pt1 = (int(x0 + tMax * vx), int(y0 + tMax * vy))
-        pt2 = (int(x0 + tMin * vx), int(y0 + tMin * vy))
-    
-        return pt1, pt2    
+
+        # Original endpoints
+        pt1 = np.array([x0 + tMax * vx, y0 + tMax * vy])
+        pt2 = np.array([x0 + tMin * vx, y0 + tMin * vy])
+
+        # Limit line length
+        lineVector = pt1 - pt2
+        lineLength = np.linalg.norm(lineVector)
+
+        if lineLength > maxLineLength:
+            direction = lineVector / lineLength
+            pt1 = pt2 + direction * maxLineLength
+
+        pt1 = tuple(pt1.astype(int))
+        pt2 = tuple(pt2.astype(int))
+
+        return pt1, pt2
 
     
     def detectIntersection(self, whiteMask):
@@ -289,11 +298,7 @@ class LaneHandler:
         # bottomMask = whiteMask[h // 2:, :]
         bottomMask = whiteMask[int(h * 0.3):, :]
 
-        contours, _ = cv2.findContours(
-            bottomMask,
-            cv2.RETR_EXTERNAL,
-            cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours, _ = cv2.findContours(bottomMask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         largeBlobs = []
         totalWhiteArea = 0

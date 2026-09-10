@@ -32,15 +32,15 @@ class RoverladCV(Node):
         }
 
         self.priorityMap = {
-            0: 3,  # Red
+            0: 1,  # Green
             1: 2,  # Yellow
-            2: 1   # Green
+            2: 3,  # Red
         }
 
         # self.signMap = {0: "S15", 1: "S20", 2: "S30", 3: "S40"}
 
-        self.TFLightAreaThresh = 360
-        self.TFLightDepthThresh = 1.2
+        self.TFLightAreaThresh = 200
+        self.TFLightDepthThresh = 7.5
 
         # self.StreetSignAreaThresh = 1600
 
@@ -98,10 +98,7 @@ class RoverladCV(Node):
         self.latestFrame = msg
         receiveTime = time.time()
 
-        imageTime = (
-            msg.header.stamp.sec
-            + msg.header.stamp.nanosec * 1e-9
-        )
+        imageTime = (msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9)
 
         print(
             f"Image ROS time: {imageTime:.6f} | "
@@ -150,7 +147,7 @@ class RoverladCV(Node):
         msg.data = bool((self.computeArea(self.bestBox) >= self.TFLightAreaThresh) and (self.depth <= self.TFLightDepthThresh))
         self.inRangePub.publish(msg)
 
-        print("Box size:", self.computeArea(self.bestBox))
+        # print("Box size:", self.computeArea(self.bestBox))
 
         imgCopy = cv2.cvtColor(cvImg, cv2.COLOR_RGB2BGR)
         self.drawLabels(imgCopy, boxesPX, scoresNP, labelsNP, self.bestBox)
